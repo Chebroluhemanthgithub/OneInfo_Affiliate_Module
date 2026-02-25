@@ -1,0 +1,3 @@
+{"level":"error","message":"Redirect error connect ETIMEDOUT 64:ff9b::9f29:a818:27017, connect ETIMEDOUT 159.41.168.24:27017","timestamp":"2026-02-24T13:13:53.808Z"}
+{"level":"error","message":"Redirect error read ECONNRESET","timestamp":"2026-02-24T13:14:26.707Z"}
+{"level":"error","message":"Redirect error connect ETIMEDOUT 64:ff9b::9f29:a818:27017, connect ETIMEDOUT 159.41.168.24:27017","timestamp":"2026-02-24T13:19:24.096Z"}
