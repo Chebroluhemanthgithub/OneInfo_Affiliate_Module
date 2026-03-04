@@ -78,7 +78,7 @@ const Dashboard = () => {
               paidCommission
               totalOrders
             }
-            links(limit: 20) {
+            links(limit: 100) {
               shortCode
               originalUrl
               publicUrl
@@ -177,7 +177,7 @@ const Dashboard = () => {
         {/* ── Links Section ── */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-slate-800">Your Links</h2>
-          <span className="text-xs text-slate-400">{stats?.links?.length || 0} links</span>
+          <span className="text-xs text-slate-400">Showing {stats?.links?.length || 0} latest links</span>
         </div>
 
         <div className="grid gap-4">

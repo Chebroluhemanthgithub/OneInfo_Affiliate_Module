@@ -100,3 +100,41 @@
 {"level":"error","message":"Redirect error read ECONNRESET","timestamp":"2026-02-24T13:14:26.707Z"}
 {"level":"error","message":"Redirect error connect ETIMEDOUT 64:ff9b::9f29:a818:27017, connect ETIMEDOUT 159.41.168.24:27017","timestamp":"2026-02-24T13:19:24.096Z"}
 {"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-02-25T05:47:29.198Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-02-26T05:23:34.495Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-02-26T13:19:52.453Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-02T07:25:33.109Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-02T07:30:51.548Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-02T07:38:33.756Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-02T09:38:12.863Z"}
+{"level":"error","message":"Uncaught Exception thrown: listen EADDRINUSE: address already in use :::4000","stack":"Error: listen EADDRINUSE: address already in use :::4000\n    at Server.setupListenHandle [as _listen2] (node:net:1940:16)\n    at listenInCluster (node:net:1997:12)\n    at Server.listen (node:net:2102:7)\n    at Function.listen (C:\\OneInfo_Affiliate_backend\\node_modules\\express\\lib\\application.js:635:24)\n    at C:\\OneInfo_Affiliate_backend\\server.js:117:9\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2026-03-02T10:20:07.212Z"}
+{"level":"error","message":"Uncaught Exception thrown: listen EADDRINUSE: address already in use :::4000","stack":"Error: listen EADDRINUSE: address already in use :::4000\n    at Server.setupListenHandle [as _listen2] (node:net:1940:16)\n    at listenInCluster (node:net:1997:12)\n    at Server.listen (node:net:2102:7)\n    at Function.listen (C:\\OneInfo_Affiliate_backend\\node_modules\\express\\lib\\application.js:635:24)\n    at C:\\OneInfo_Affiliate_backend\\server.js:119:9\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2026-03-02T10:25:22.098Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-02T11:23:51.676Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-02T11:31:30.838Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-02T12:41:34.725Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-02T12:48:21.848Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-02T12:49:14.165Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-02T12:49:28.055Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-02T12:49:59.067Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-02T12:50:08.683Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-02T12:50:27.026Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-02T12:51:53.057Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-02T12:52:00.538Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-03T05:59:57.229Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-03T06:50:04.886Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-03T06:59:22.257Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-03T08:48:09.938Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-03T09:27:10.214Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-03T09:52:54.785Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-04T05:43:18.265Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-04T05:48:32.116Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-04T05:48:37.647Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-04T05:48:48.094Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-04T05:49:14.397Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-04T05:49:49.592Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-04T05:52:54.125Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-04T05:58:21.866Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-04T06:01:26.190Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-04T06:23:15.514Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-04T06:23:22.788Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-04T06:32:13.050Z"}
+{"environment":"development","level":"info","message":"Server running","port":"4000","timestamp":"2026-03-04T06:41:33.163Z"}

@@ -35,6 +35,11 @@ const OrderSchema = new mongoose.Schema(
       index: true
     },
 
+    // Attribution (network & brand)
+    brandId: { type: String, index: true },
+    networkId: { type: String, index: true },
+    networkTransactionId: { type: String },
+
     // Optional future expansion
     customerType: {
       type: String,
@@ -53,6 +58,7 @@ const OrderSchema = new mongoose.Schema(
 // Compound index for fast analytics
 OrderSchema.index({ creatorId: 1, status: 1 });
 OrderSchema.index({ platform: 1, category: 1 });
+OrderSchema.index({ networkId: 1, createdAt: -1 });
 
 module.exports =
   mongoose.models.Order ||

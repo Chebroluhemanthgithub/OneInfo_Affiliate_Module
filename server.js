@@ -22,6 +22,7 @@ const redirectRoute = require("./src/redirects/redirect.route");
 const orderRoutes = require("./src/orders/order.route");
 const adminRoutes = require("./src/admin/admin.route");
 const csvRoutes = require("./src/ingestion/csv.route");
+const brandRoutes = require("./src/brands/brand.route");
 
 const errorMiddleware = require("./src/middlewares/error.middleware");
 const imageProxyRoute = require("./src/utils/imageProxy.route");
@@ -83,6 +84,7 @@ app.use("/image-proxy", imageProxyRoute);
    CREATOR ROUTES (JWT + Rate Limited)
 ============================================================ */
 app.use("/links", apiLimiter, authMiddleware, linkRoutes);
+app.use("/brands", apiLimiter, brandRoutes);
 
 /* ============================================================
    INTERNAL ORDER ROUTES (API KEY + Rate Limited)
@@ -103,6 +105,7 @@ app.use(errorMiddleware);
    START CRON JOBS
 ============================================================ */
 require("./src/cron/admitad.cron");
+require("./src/cron/cuelinks.cron");
 
 /* ============================================================
    START SERVER — async IIFE to properly await DB + GraphQL

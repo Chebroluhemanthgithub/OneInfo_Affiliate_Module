@@ -38,6 +38,26 @@ module.exports = gql`
     createdAt: String
   }
 
+  type NetworkCommission {
+    networkId: String
+    creatorEarnings: Float
+    brandPayout: Float
+    platformRevenue: Float
+  }
+
+  type BrandCommission {
+    brandId: String
+    creatorEarnings: Float
+    brandPayout: Float
+    platformRevenue: Float
+  }
+
+  type CreatorBrandEarnings {
+    brandId: String
+    creatorEarnings: Float
+    totalOrders: Int
+  }
+
   type OrdersResponse {
     orders: [Order]
     totalCount: Int
@@ -47,6 +67,9 @@ module.exports = gql`
   type Query {
     me: Creator
     myOrders(page: Int!, limit: Int!): OrdersResponse
+    totalCommissionByNetwork: [NetworkCommission]
+    totalCommissionByBrand: [BrandCommission]
+    creatorEarningsByBrand(creatorId: String!): [CreatorBrandEarnings]
   }
 
 `;

@@ -1,6 +1,6 @@
 /**
  * Scrape Open Graph metadata (image + title) from a product URL.
- * Handles: standard OG tags, Lifestyle Stores CDN, Myntra, Amazon, Flipkart, Meesho.
+ * Handles: standard OG tags, Lifestyle Stores CDN, Amazon, Flipkart, Meesho.
  */
 async function scrapeOG(url) {
   try {
@@ -67,13 +67,7 @@ async function scrapeOG(url) {
       if (lifestyleMatch) productImage = lifestyleMatch[1];
     }
 
-    // 6. Myntra CDN  (assets.myntassets.com)
-    if (!productImage) {
-      const myntraMatch = html.match(
-        /(https?:\/\/assets\.myntassets\.com\/[^"'\s]+\.(jpg|jpeg|png|webp))/i
-      );
-      if (myntraMatch) productImage = myntraMatch[1];
-    }
+
 
     // 7. Amazon product image (images-na.ssl-images-amazon.com / m.media-amazon.com)
     if (!productImage) {

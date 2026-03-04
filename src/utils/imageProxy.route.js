@@ -5,7 +5,7 @@ const router = express.Router();
  * GET /image-proxy?url=<encoded_image_url>
  *
  * Why this exists:
- *   E-commerce CDNs (Lifestyle Stores, Amazon, Flipkart, Myntra) use
+ *   E-commerce CDNs (Lifestyle Stores, Amazon, Flipkart) use
  *   Referer-based hotlink protection. When the browser requests an image
  *   directly from localhost:5173, the CDN sees the wrong Referer and blocks
  *   it (returns 403 or a 1x1 blank pixel).

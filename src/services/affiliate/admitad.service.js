@@ -66,7 +66,7 @@ class AdmitadService {
   // Uses ADMITAD_BASE_LINK from .env — clicks tracked by Admitad server on redirect.
   // Format: {BASE_LINK}?ulp={encodedProductUrl}&subid={shortCode}
   // ===============================
-  generateBaseLink(originalUrl, shortCode) {
+  generateBaseLink(originalUrl, shortCode, brand = null) {
     const baseLink = process.env.ADMITAD_BASE_LINK;
 
     if (!baseLink) {
@@ -102,13 +102,13 @@ class AdmitadService {
 
     let campaignId;
 
-    if (productUrl.includes("lifestylestores.com")) {
-      campaignId = process.env.ADMITAD_LIFESTYLE_CAMPAIGN_ID;
-    } else if (productUrl.includes("myntra.com")) {
-      campaignId = process.env.ADMITAD_MYNTRA_CAMPAIGN_ID;
-    } else {
-      throw new Error("Unsupported Admitad domain");
-    }
+    // if (productUrl.includes("lifestylestores.com")) {
+    //   campaignId = process.env.ADMITAD_LIFESTYLE_CAMPAIGN_ID;
+    // } else if (productUrl.includes("myntra.com")) {
+    //   campaignId = process.env.ADMITAD_MYNTRA_CAMPAIGN_ID;
+    // } else {
+    //   throw new Error("Unsupported Admitad domain");
+    // }
 
     if (!campaignId) {
       throw new Error("Campaign ID not configured in .env");

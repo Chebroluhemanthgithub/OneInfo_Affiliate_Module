@@ -6,4 +6,10 @@ module.exports = {
       ulp: "ulp",
     },
   },
+  cuelinks: {
+    paramMap: {
+      subid: "subid1",  // shortCode
+      subid1: "subid", // creatorId
+    },
+  },
 };

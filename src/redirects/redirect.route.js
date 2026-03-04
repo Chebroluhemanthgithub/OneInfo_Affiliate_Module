@@ -55,7 +55,7 @@ router.get("/:shortCode", async (req, res) => {
       referer: req.headers["referer"] || req.headers["referrer"] || "direct",
     });
 
-    // 6. Strict 302 redirect → Admitad tracking URL
+    // 6. Strict 302 redirect → Affiliate tracking URL
     return res.redirect(302, link.affiliateUrl);
 
   } catch (error) {
@@ -76,13 +76,15 @@ async function trackClick({ link, ip, userAgent, referer }) {
     // Always log the raw click event (fraud or not)
     await ClickEvent.create({
       shortCode:   link.shortCode,
+      linkId:      link._id,
       creatorId:   link.creatorId,
+      brandId:     link.brandId || null,
+      networkId:   link.networkId || null,
       ip,
       userAgent:   userAgent || "unknown",
       referer:     referer || "direct",
       isFraud:     fraudResult.isFraud,
       fraudReason: fraudResult.reason || null,
-      timestamp:   new Date(),
     });
 
     // Only increment stats for non-fraudulent clicks

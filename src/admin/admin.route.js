@@ -390,7 +390,7 @@ router.get("/top-creators", adminMiddleware, async (req, res) => {
    ADMITAD MANAGEMENT
 ============================================================ */
 
-const admitadService = require("../services/admitad.service");
+const admitadService = require("../services/affiliate/admitad.service");
 const SyncState = require("../models/syncState.model");
 
 /**
@@ -454,3 +454,4 @@ router.post("/admitad/sync", adminMiddleware, async (req, res) => {
 });
 
 module.exports = router;
+

@@ -4,8 +4,12 @@ const router = express.Router();
 const AffiliateLink = require("./affiliateLink.model");
 const generateShortCode = require("../utils/shortCode");
 const scrapeOG = require("../utils/scrapeOG");
-const admitadService = require("../services/admitad.service");
+
 const { buildAffiliateUrl } = require("../affiliate/affiliate.service");
+const Brand = require("../brands/brand.model");
+const Network = require("../networks/network.model");
+const { getServiceByKey } = require("../services/affiliate/networkFactory");
+const { normalizeUrl } = require("../utils/urlNormalizer");
 
 // ─────────────────────────────────────────────
 // Domain whitelist — only these are allowed to be shortened.
@@ -13,7 +17,7 @@ const { buildAffiliateUrl } = require("../affiliate/affiliate.service");
 // ─────────────────────────────────────────────
 const ALLOWED_DOMAINS = [
   "lifestylestores.com",
-  "myntra.com",
+  "plumgoodness.com",
 ];
 
 function isAllowedDomain(url) {
@@ -43,14 +47,82 @@ router.post("/create", async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    // ── Domain whitelist check ─────────────────
-    if (!isAllowedDomain(originalUrl)) {
+    // ── 1. Normalize URL ───────────────────────
+    const normalizedUrl = normalizeUrl(originalUrl);
+
+    // ── 2. Determine Network & Brand ─────────────
+    let platform = "admitad";
+    let brandId = null;
+    let networkId = "admitad"; // Default network
+    let brand = null;
+
+    if (req.body && req.body.brandId) {
+      console.log('Link create: requested brandId=', req.body.brandId);
+      brand = await Brand.findById(req.body.brandId).lean();
+      } else {
+        // Automatic brand detection based on domain
+        try {
+          const { hostname } = new URL(normalizedUrl);
+          // Find if any brand's domain matches the hostname
+          const activeBrands = await Brand.find({ status: 'active', domain: { $ne: "" } }).lean();
+          brand = activeBrands.find(b => hostname.includes(b.domain));
+        } catch (e) {
+          console.warn("Brand auto-detection failed", e.message);
+        }
+      }
+
+    if (brand) {
+      brandId = brand._id;
+      networkId = brand.networkId;
+      const network = await Network.findById(networkId).lean();
+      if (network) {
+        platform = network.key;
+      }
+    } else if (req.body && req.body.brandId) {
+      return res.status(400).json({ error: "Invalid brandId" });
+    }
+
+    // If no brand detected, use platform to find default networkId
+    if (!brand) {
+      const network = await Network.findOne({ key: platform }).lean();
+      if (network) networkId = network._id;
+    }
+
+    // ── 3. Domain whitelist check ─────────────────
+    // If brandId is provided we trust the brand mapping and skip the domain whitelist.
+    if (!(req.body && req.body.brandId) && !isAllowedDomain(originalUrl)) {
+      if (originalUrl.includes("myntra.com")) {
+        return res.status(400).json({
+          error: "Myntra brands is not listed in my affiliation program",
+        });
+      }
       return res.status(400).json({
         error: `Unsupported domain. Only ${ALLOWED_DOMAINS.join(", ")} are allowed.`,
       });
     }
 
-    // ── BASE_URL guard ────────────────────────
+    // ── 4. Duplicate check ───────────────────────
+    // Production-grade de-duplication: creator + network + normalizedUrl
+    const existingLink = await AffiliateLink.findOne({ 
+      creatorId,
+      networkId,
+      normalizedUrl
+    }).lean();
+
+    if (existingLink) {
+      console.log(`Link deduplication: found existing code ${existingLink.shortCode} for ${normalizedUrl} on ${networkId}`);
+      return res.status(200).json({
+        message: "Existing link retrieved",
+        shortCode: existingLink.shortCode,
+        platform: existingLink.platform,
+        productTitle: existingLink.productTitle,
+        productImage: existingLink.productImage,
+        oneInfoLink: existingLink.publicUrl,
+        affiliateUrl: existingLink.affiliateUrl,
+      });
+    }
+
+    // ── 5. BASE_URL guard ────────────────────────
     const baseUrl = process.env.BASE_URL;
     if (!baseUrl) {
       console.error("BASE_URL is not set in .env");
@@ -66,35 +138,30 @@ router.post("/create", async (req, res) => {
       attempts++;
       shortCode = generateShortCode(6);
 
-      // Skip if code already taken
-      const existing = await AffiliateLink.findOne({ shortCode }).lean();
-      if (existing) continue;
+      // (Network and service logic already handled above)
+      const service = getServiceByKey(platform);
+      let finalAffiliateUrl;
 
-      // ── Generate Admitad BASE_LINK (synchronous, no API call) ──
-      let affiliateUrl;
       try {
-        affiliateUrl = admitadService.generateBaseLink(originalUrl, shortCode);
-      } catch (err) {
-        console.error("BASE_LINK generation failed:", err.message);
-        return res.status(500).json({
-          error: "Failed to generate Admitad tracking link. " + err.message,
+        const base = service.generateBaseLink(originalUrl, shortCode, brand);
+        finalAffiliateUrl = buildAffiliateUrl({
+          platform,
+          baseUrl: base,
+          creatorId,
+          shortCode,
         });
+      } catch (err) {
+        console.error(`${platform} link generation failed:`, err.message);
+        return res.status(500).json({ error: `Failed to generate tracking link: ${err.message}` });
       }
 
-      // Inject additional params (subid, subid1, etc.) in a safe way
-      const finalAffiliateUrl = buildAffiliateUrl({
-        platform: "admitad",
-        baseUrl: affiliateUrl,
-        creatorId,
-        shortCode,
-      });
-
-      // Strict: must contain Admitad tracking domain
-      if (!finalAffiliateUrl || !finalAffiliateUrl.includes("tjzuh.com")) {
-        console.error("Invalid affiliateUrl generated:", finalAffiliateUrl);
-        return res.status(500).json({
-          error: "Admitad tracking URL validation failed",
-        });
+      // Basic validation for tracking URLs
+      if (platform === "cuelinks" && !finalAffiliateUrl.includes("linksredirect.com")) {
+        console.error("Invalid Cuelinks affiliateUrl generated:", finalAffiliateUrl);
+        return res.status(500).json({ error: "Cuelinks tracking URL validation failed" });
+      } else if (platform === "admitad" && !finalAffiliateUrl.includes("tjzuh.com")) {
+        console.error("Invalid Admitad affiliateUrl generated:", finalAffiliateUrl);
+        return res.status(500).json({ error: "Admitad tracking URL validation failed" });
       }
 
       // ── Scrape product metadata (non-critical, never blocks link creation) ──
@@ -115,11 +182,14 @@ router.post("/create", async (req, res) => {
       try {
         link = await AffiliateLink.create({
           shortCode,
-          originalUrl,
+          originalUrl: normalizedUrl,   // Save normalized version to prevent future dupes
+          normalizedUrl,                // ← REQUIRED: used by compound dedup index + query
           affiliateUrl: finalAffiliateUrl,
           publicUrl,
           creatorId,
-          platform: "admitad",
+          platform,
+          brandId: brandId || undefined,
+          networkId: networkId || undefined,
           productTitle,
           productImage,
           clickCount: 0,
@@ -128,7 +198,28 @@ router.post("/create", async (req, res) => {
         });
       } catch (err) {
         if (err.code === 11000) {
-          // Duplicate key race — retry
+          // Determine WHICH unique key collided:
+          // • shortCode collision  → retry with a new code
+          // • dedup index collision (creatorId+networkId+normalizedUrl) → return existing
+          const dupKey = err.keyPattern || {};
+          if (dupKey.normalizedUrl || dupKey['normalizedUrl'] !== undefined ||
+              (err.keyValue && err.keyValue.normalizedUrl !== undefined)) {
+            // Same URL already exists for this creator+network — surface it
+            const existingLink = await AffiliateLink.findOne({ creatorId, networkId, normalizedUrl }).lean();
+            if (existingLink) {
+              console.log(`Link dedup (index race): returning existing code ${existingLink.shortCode}`);
+              return res.status(200).json({
+                message: "Existing link retrieved",
+                shortCode: existingLink.shortCode,
+                platform: existingLink.platform,
+                productTitle: existingLink.productTitle,
+                productImage: existingLink.productImage,
+                oneInfoLink: existingLink.publicUrl,
+                affiliateUrl: existingLink.affiliateUrl,
+              });
+            }
+          }
+          // shortCode collision — retry with a new code
           link = null;
           continue;
         }
@@ -221,5 +312,7 @@ router.post("/rescrape", async (req, res) => {
     return res.status(500).json({ error: "Server error during rescrape" });
   }
 });
+
+
 
 module.exports = router;

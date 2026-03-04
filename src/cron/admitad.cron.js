@@ -1,5 +1,5 @@
 const cron = require("node-cron");
-const admitadService = require("../services/admitad.service");
+const admitadService = require("../services/affiliate/admitad.service");
 const orderQueue = require("../queue/order.queue");
 const SyncState = require("../models/syncState.model");
 

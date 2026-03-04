@@ -67,7 +67,12 @@ async function createOrder(data) {
     creatorId: creatorId || data.creatorId,
     orderId: data.orderId,
     productName: data.productName || "Admitad Product",
-    orderValue: data.rawAmount || data.orderValue, 
+    orderValue: data.rawAmount || data.orderValue,
+
+    // Network / Brand attribution (optional)
+    brandId: data.brandId || (shortCode ? (await AffiliateLink.findOne({ shortCode })).brandId : undefined),
+    networkId: data.networkId || (shortCode ? (await AffiliateLink.findOne({ shortCode })).networkId : undefined),
+    networkTransactionId: data.networkTransactionId || data.networkTxId || null,
 
     brandCommissionRate: data.platform === "admitad" ? 0 : rule.brandCommissionRate,
     brandCommissionAmount,

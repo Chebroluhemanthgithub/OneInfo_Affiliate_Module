@@ -14,6 +14,12 @@ const AffiliateLinkSchema = new mongoose.Schema(
     // Platform
     platform:     { type: String, default: "admitad" },
 
+    // Network & Brand (new)
+    brandId:      { type: String, index: true },
+    networkId:    { type: String, index: true },
+    normalizedUrl: { type: String, index: true }, // For robust de-duplication
+    subId:        { type: String, default: "" },
+
     // Product metadata (scraped)
     productTitle: { type: String, default: "" },
     productImage: { type: String, default: "" },
@@ -31,6 +37,15 @@ const AffiliateLinkSchema = new mongoose.Schema(
 );
 
 // ─────────────────────────────────────────────
+// Production-Grade De-duplication Index
+// Prevents duplicate rows for the same creator, network, and product.
+// ─────────────────────────────────────────────
+AffiliateLinkSchema.index(
+  { creatorId: 1, networkId: 1, normalizedUrl: 1 },
+  { unique: true }
+);
+
+// ─────────────────────────────────────────────
 // Compound index for creator dashboard queries
 // (1000+ creators × N links each — keeps queries fast)
 // ─────────────────────────────────────────────
@@ -40,4 +55,5 @@ module.exports =
   mongoose.models.AffiliateLink ||
   mongoose.model("AffiliateLink", AffiliateLinkSchema);
 
+  
   
