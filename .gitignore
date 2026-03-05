@@ -1,0 +1,29 @@
+# ─── Dependencies ───────────────────────────────────────
+node_modules/
+
+# ─── Environment & Secrets (NEVER commit these) ─────────
+.env
+.env.local
+.env.production
+.env.*
+
+# ─── Logs ───────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+
+# ─── Uploads / Temp files ───────────────────────────────
+uploads/
+tmp/
+
+# ─── Build output ───────────────────────────────────────
+dist/
+build/
+
+# ─── OS & Editor files ──────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+
+# ─── Package lock (optional — remove line if you want to commit it) ──
+# package-lock.json
