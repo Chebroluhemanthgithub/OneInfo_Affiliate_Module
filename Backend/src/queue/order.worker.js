@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const mongoose = require("mongoose");
 const { Worker } = require("bullmq");
+const connection = require("../config/redis");
 
 const connectDB = require("../config/db");
 const { createOrder } = require("../orders/createOrder.service");
@@ -93,10 +94,7 @@ const worker = new Worker(
     }
   },
   {
-    connection: {
-      host: process.env.REDIS_HOST || "127.0.0.1",
-      port: process.env.REDIS_PORT || 6379,
-    },
+    connection,
     concurrency: 5,
   }
 );

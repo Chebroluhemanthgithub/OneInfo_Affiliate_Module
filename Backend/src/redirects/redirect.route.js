@@ -55,8 +55,53 @@ router.get("/:shortCode", async (req, res) => {
       referer: req.headers["referer"] || req.headers["referrer"] || "direct",
     });
 
-    // 6. Strict 302 redirect → Affiliate tracking URL
-    return res.redirect(302, link.affiliateUrl);
+    // 6. Mobile-safe redirect
+    // We use an HTML meta-refresh page instead of a raw 302 for two reasons:
+    //   a) WhatsApp/Instagram/iOS in-app browsers often BLOCK raw 302 redirects to
+    //      external domains, causing a blank/error page on Android & iOS.
+    //   b) Meta-refresh is universally respected by all browsers including in-app ones.
+    // The Referrer-Policy header ensures Admitad always receives our domain as the
+    // referrer so their tracking and fraud filters work correctly.
+    const destination = link.affiliateUrl;
+    const ua = (req.headers["user-agent"] || "").toLowerCase();
+    const isInAppBrowser =
+      ua.includes("instagram") ||
+      ua.includes("fban") ||        // Facebook App
+      ua.includes("fbios") ||       // Facebook iOS
+      ua.includes("whatsapp") ||
+      ua.includes("snapchat") ||
+      ua.includes("twitter") ||
+      ua.includes("line/");
+
+    // For normal browsers a 302 is fastest; for in-app browsers use meta-refresh
+    if (isInAppBrowser) {
+      res.setHeader("Referrer-Policy", "unsafe-url");
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      return res.status(200).send(
+        `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="refresh" content="0;url=${destination}"/>
+    <meta name="referrer" content="always"/>
+    <title>Redirecting…</title>
+    <style>
+      body { margin:0; display:flex; align-items:center; justify-content:center;
+             min-height:100vh; font-family:sans-serif; background:#f8f8f8; }
+      a { color:#0066cc; font-size:1.1rem; }
+    </style>
+  </head>
+  <body>
+    <p>Redirecting you… <a href="${destination}">Click here if not redirected</a></p>
+    <script>window.location.replace(${JSON.stringify(destination)});</script>
+  </body>
+</html>`
+      );
+    }
+
+    // Standard desktop/normal browser → fast 302
+    res.setHeader("Referrer-Policy", "unsafe-url");
+    return res.redirect(302, destination);
 
   } catch (error) {
     logger.error("Redirect error", { message: error.message });

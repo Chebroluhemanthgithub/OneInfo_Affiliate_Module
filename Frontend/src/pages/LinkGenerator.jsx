@@ -9,9 +9,22 @@ import { Copy, ArrowRight, ExternalLink, CheckCircle } from 'lucide-react';
 /**
  * Route every brand logo through the backend image-proxy so CDN
  * hotlink-protection never blocks it (Lifestyle, Plum, future brands).
- */
-const proxyLogo = (url) =>
-  url ? `http://localhost:4000/image-proxy?url=${encodeURIComponent(url)}` : null;
+ */const BACKEND = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+
+/* ─────────────────────────────────────────────
+   Clean image URLs — strip HTML entities and
+   stray encoded quotes that break the URL
+───────────────────────────────────────────── */
+function cleanImageUrl(url) {
+  if (!url) return '';
+  return url
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '')
+    .replace(/%26quot%3B/gi, '')
+    .replace(/["']/g, '')
+    .replace(/[,;\s]+$/g, '')
+    .trim();
+}
 
 /**
  * BrandLogo – tries the proxied logo, falls back to coloured initials only
@@ -24,7 +37,7 @@ const BrandLogo = ({ brand, size = 'md' }) => {
     ? 'w-14 h-14 text-sm'
     : 'w-10 h-10 text-xs';
 
-  const proxied = !imgFailed && proxyLogo(brand.logoUrl);
+  const proxied = !imgFailed && brand.logoUrl ? cleanImageUrl(brand.logoUrl) : null;
 
   // Generate a stable pastel colour from the brand name (deterministic)
   const pastelBg = () => {
@@ -232,13 +245,7 @@ const LinkGenerator = () => {
               {shortLink.productImage && (
                 <div className="flex items-start gap-4 mb-4 pb-4 border-b border-green-200">
                   <img
-                    src={`http://localhost:4000/image-proxy?url=${encodeURIComponent(
-                      shortLink.productImage
-                        .replace(/&quot;/g, '')
-                        .replace(/%26quot%3B/gi, '')
-                        .replace(/["']/g, '')
-                        .trim()
-                    )}`}
+                    src={cleanImageUrl(shortLink.productImage)}
                     alt={shortLink.productTitle || 'Product'}
                     className="w-20 h-20 object-cover rounded-lg border border-green-200 bg-white"
                     onError={(e) => {

@@ -1,10 +1,7 @@
 const { Queue } = require("bullmq");
+const connection = require("../config/redis");
 
-const orderQueue = new Queue("orderQueue", {
-  connection: {
-    host: "127.0.0.1",
-    port: 6379,
-  },
-});
+const orderQueue = new Queue("orderQueue", { connection });
 
 module.exports = orderQueue;
+
