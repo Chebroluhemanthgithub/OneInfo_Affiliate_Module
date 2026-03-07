@@ -1,5 +1,5 @@
 const { URL } = require("url");
-const _fetch = typeof fetch !== "undefined" ? fetch : require("node-fetch");
+const _fetch = require("node-fetch");
 const Brand = require("../../brands/brand.model");
 
 class CuelinksService {
@@ -63,6 +63,59 @@ class CuelinksService {
       console.error("Cuelinks fetchActions error:", err.message);
       return [];
     }
+  }
+
+  // Fetch all campaigns from Cuelinks API
+  async getCampaigns() {
+    let apiKey = process.env.CUELINKS_API_KEY || process.env.CUELINKS_TOKEN;
+
+    if (!apiKey) {
+      console.warn("CUELINKS_API_KEY not configured; skipping getCampaigns");
+      return [];
+    }
+    
+    apiKey = apiKey.trim();
+
+    let allCampaigns = [];
+    let page = 1;
+
+    console.log("Fetching Cuelinks campaigns...");
+
+    while (true) {
+      try {
+        const url = `https://cuelinks.com/api/v2/campaigns.json?page=${page}`;
+        const res = await _fetch(url, {
+          headers: {
+            Authorization: `Token token="${apiKey}"`,
+            Accept: "application/json",
+          },
+        });
+
+        if (!res.ok) {
+          console.error("Cuelinks API error fetching campaigns", res.status, await res.text());
+          break;
+        }
+
+        const data = await res.json();
+        
+        if (!data || !data.campaigns || data.campaigns.length === 0) {
+          break;
+        }
+
+        allCampaigns = allCampaigns.concat(data.campaigns);
+        console.log(`  Fetched Cuelinks page ${page} (${allCampaigns.length} total)...`);
+
+        // Cuelinks API doesn't always provide total count in meta, usually we stop when campaigns.length < 30
+        if (data.campaigns.length < 30 || page >= 400) break;
+        
+        page++;
+      } catch (err) {
+        console.error("Cuelinks getCampaigns error:", err.message);
+        break;
+      }
+    }
+
+    return allCampaigns;
   }
 }
 

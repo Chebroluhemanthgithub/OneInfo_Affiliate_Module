@@ -12,21 +12,78 @@ const { getServiceByKey } = require("../services/affiliate/networkFactory");
 const { normalizeUrl } = require("../utils/urlNormalizer");
 
 // ─────────────────────────────────────────────
-// Domain whitelist — only these are allowed to be shortened.
-// Prevents abuse (phishing, random URL shortening, malware links).
+// Brand Rules — domain whitelist + per-brand product URL patterns.
+// Each entry has:
+//   domain    : the hostname fragment used to match the URL
+//   isProduct : a function that returns true only for deep product pages
+//   hint      : human-readable hint shown to the user on failure
 // ─────────────────────────────────────────────
-const ALLOWED_DOMAINS = [
-  "lifestylestores.com",
-  "plumgoodness.com",
+const BRAND_RULES = [
+  {
+    domain: "lifestylestores.com",
+    isProduct(url) {
+      try {
+        const { pathname } = new URL(url);
+        // Valid Lifestyle product pages contain both /SHOP- and /p/ segments
+        // e.g. /in/en/SHOP-Giggles.../p/1100004715-Toffee-Brown
+        return pathname.includes("/SHOP-") && pathname.includes("/p/");
+      } catch {
+        return false;
+      }
+    },
+    hint: "Please paste a specific Lifestyle product link. It should look like: https://www.lifestylestores.com/in/en/SHOP-ProductName.../p/PRODUCT_ID",
+  },
+  {
+    domain: "plumgoodness.com",
+    isProduct(url) {
+      try {
+        const { pathname } = new URL(url);
+        // Valid Plum product pages always start with /products/
+        // e.g. /products/green-tea-pore-cleansing-face-wash
+        return pathname.startsWith("/products/") && pathname.length > "/products/".length;
+      } catch {
+        return false;
+      }
+    },
+    hint: "Please paste a specific Plum product link. It should look like: https://plumgoodness.com/products/product-name",
+  },
 ];
 
-function isAllowedDomain(url) {
+/**
+ * Returns null if the URL is valid for shortening.
+ * Returns an error string if the URL is rejected.
+ */
+function validateProductUrl(url) {
+  // 1. Must be a valid URL
+  let parsed;
   try {
-    const { hostname } = new URL(url);
-    return ALLOWED_DOMAINS.some((d) => hostname.includes(d));
+    parsed = new URL(url);
   } catch {
-    return false;
+    return "Invalid URL. Please paste a full product link (starting with https://).";
   }
+
+  // 2. Must use https (not http, ftp, etc.)
+  if (parsed.protocol !== "https:") {
+    return "Only HTTPS links are supported. Please copy the link from your browser address bar.";
+  }
+
+  // 3. Match against brand rules
+  const rule = BRAND_RULES.find((r) => parsed.hostname.includes(r.domain));
+
+  if (!rule) {
+    if (url.includes("myntra.com")) {
+      return "Myntra is not listed in our affiliation program.";
+    }
+    const allowed = BRAND_RULES.map((r) => r.domain).join(", ");
+    return `Unsupported brand. Currently supported brands: ${allowed}.`;
+  }
+
+  // 4. Must be a product page, not a homepage or category
+  if (!rule.isProduct(url)) {
+    return rule.hint;
+  }
+
+  return null; // ✅ All checks passed
 }
 
 // ─────────────────────────────────────────────
@@ -47,10 +104,19 @@ router.post("/create", async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    // ── 1. Normalize URL ───────────────────────
+    // ── 1. Validate the URL is a genuine product page ─────────────────────────
+    // Skip this check when a specific brandId is explicitly sent (admin/power-user flow)
+    if (!(req.body && req.body.brandId)) {
+      const validationError = validateProductUrl(originalUrl);
+      if (validationError) {
+        return res.status(400).json({ error: validationError });
+      }
+    }
+
+    // ── 2. Normalize URL ───────────────────────
     const normalizedUrl = normalizeUrl(originalUrl);
 
-    // ── 2. Determine Network & Brand ─────────────
+    // ── 3. Determine Network & Brand ─────────────
     let platform = "admitad";
     let brandId = null;
     let networkId = "admitad"; // Default network
@@ -59,17 +125,16 @@ router.post("/create", async (req, res) => {
     if (req.body && req.body.brandId) {
       console.log('Link create: requested brandId=', req.body.brandId);
       brand = await Brand.findById(req.body.brandId).lean();
-      } else {
-        // Automatic brand detection based on domain
-        try {
-          const { hostname } = new URL(normalizedUrl);
-          // Find if any brand's domain matches the hostname
-          const activeBrands = await Brand.find({ status: 'active', domain: { $ne: "" } }).lean();
-          brand = activeBrands.find(b => hostname.includes(b.domain));
-        } catch (e) {
-          console.warn("Brand auto-detection failed", e.message);
-        }
+    } else {
+      // Automatic brand detection based on domain
+      try {
+        const { hostname } = new URL(normalizedUrl);
+        const activeBrands = await Brand.find({ status: 'active', domain: { $ne: "" } }).lean();
+        brand = activeBrands.find(b => hostname.includes(b.domain));
+      } catch (e) {
+        console.warn("Brand auto-detection failed", e.message);
       }
+    }
 
     if (brand) {
       brandId = brand._id;
@@ -86,19 +151,6 @@ router.post("/create", async (req, res) => {
     if (!brand) {
       const network = await Network.findOne({ key: platform }).lean();
       if (network) networkId = network._id;
-    }
-
-    // ── 3. Domain whitelist check ─────────────────
-    // If brandId is provided we trust the brand mapping and skip the domain whitelist.
-    if (!(req.body && req.body.brandId) && !isAllowedDomain(originalUrl)) {
-      if (originalUrl.includes("myntra.com")) {
-        return res.status(400).json({
-          error: "Myntra brands is not listed in my affiliation program",
-        });
-      }
-      return res.status(400).json({
-        error: `Unsupported domain. Only ${ALLOWED_DOMAINS.join(", ")} are allowed.`,
-      });
     }
 
     // ── 4. Duplicate check ───────────────────────
