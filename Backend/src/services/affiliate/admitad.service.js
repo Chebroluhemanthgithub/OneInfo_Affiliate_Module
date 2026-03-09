@@ -72,10 +72,12 @@ class AdmitadService {
   // Format: {BASE_LINK}?ulp={encodedProductUrl}&subid={shortCode}
   // ===============================
   generateBaseLink(originalUrl, shortCode, brand = null) {
-    const baseLink = process.env.ADMITAD_BASE_LINK;
+    // 🔹 Step 1: Resolve the base tracking link
+    // Prioritize brand-specific link, fallback to global .env default
+    let baseLink = (brand && brand.networkCampaignLink) ? brand.networkCampaignLink : process.env.ADMITAD_BASE_LINK;
 
     if (!baseLink) {
-      throw new Error("ADMITAD_BASE_LINK is not configured in .env");
+      throw new Error("Admitad base link not found (neither brand-specific nor global .env fallback exists)");
     }
     if (!originalUrl) {
       throw new Error("originalUrl is required to generate base link");
@@ -85,14 +87,18 @@ class AdmitadService {
     }
 
     const url = new URL(baseLink);
+    // Note: We use subid1 in affiliate.config/service to avoid Shopify conflicts.
+    // However, here we just return the base; buildAffiliateUrl handles the params.
+    // Actually, this method currently sets them too. We should align it.
+    
     url.searchParams.set("ulp", originalUrl);
-    url.searchParams.set("subid", shortCode);
+    // url.searchParams.set("subid", shortCode); // ← Removing this as buildAffiliateUrl will add subid1
 
     const finalUrl = url.toString();
 
-    // Strict validation — must contain the tracking domain
-    if (!finalUrl.includes("tjzuh.com")) {
-      throw new Error("Generated BASE_LINK does not contain expected tracking domain");
+    // Basic validation
+    if (!finalUrl.includes("tjzuh.com") && !finalUrl.includes("admitad.com")) {
+      console.warn("Generated BASE_LINK domain seems unusual:", finalUrl);
     }
 
     return finalUrl;

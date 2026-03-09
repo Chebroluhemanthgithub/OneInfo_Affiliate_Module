@@ -39,7 +39,7 @@ cron.schedule("*/10 * * * *", async () => {
         }
 
         await orderQueue.add("createOrder", {
-          subId: action.subid,
+          subId: action.subid1 || action.subid,
           orderId: action.order_id,
           orderValue: action.payment, // brand payout (commission)
           rawAmount: action.price || action.amount, // product price (cart value)

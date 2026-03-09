@@ -45,6 +45,7 @@ async function sync() {
         name: item.name,
         networkId: 'admitad',
         networkCampaignId: item.id,
+        networkCampaignLink: item.gotolink || '',
         category: item.categories && item.categories[0] ? item.categories[0].name : 'general',
         domain: mainDomain,
         logoUrl: item.image || '',
