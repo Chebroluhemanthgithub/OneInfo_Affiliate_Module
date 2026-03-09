@@ -21,18 +21,23 @@ async function createOrder(data) {
     return { order: existingOrder, isNew: false, oldStatus };
   }
 
-  // 🔹 Step 2: Handle subId mapping for Admitad
+  // 🔹 Step 2: Extract Tracking Data (subId/shortCode)
+  // Higher priority: explicitly provided creatorId/shortCode
   let creatorId = data.creatorId;
   let shortCode = data.shortCode;
 
-  if (data.subId && !creatorId) {
-    const link = await AffiliateLink.findOne({ shortCode: data.subId });
-    if (!link) {
-      console.warn("No affiliate link found for subId:", data.subId);
-      return null;
+  // Fallback: Resolve from subid/subid1 if not provided
+  const networkSubId = data.subid1 || data.subId || data.subid;
+  
+  if (networkSubId && !shortCode) {
+    const link = await AffiliateLink.findOne({ shortCode: networkSubId.toString() });
+    if (link) {
+      creatorId = link.creatorId;
+      shortCode = link.shortCode;
+    } else {
+      console.warn("No affiliate link found for network subId:", networkSubId);
+      // We don't return null yet; we might still have data.creatorId
     }
-    creatorId = link.creatorId;
-    shortCode = data.subId;
   }
 
   // 🔹 Step 3: Fetch commission rules
