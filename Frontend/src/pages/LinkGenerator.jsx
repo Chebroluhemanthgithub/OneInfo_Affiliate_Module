@@ -149,65 +149,6 @@ const LinkGenerator = () => {
         <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-100 max-w-2xl">
           <form onSubmit={generateLink} className="space-y-6">
 
-            {/* ── Brand selector ────────────────────────────────────────── */}
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-slate-700">
-                Select Brand
-                <span className="ml-1 text-slate-400 font-normal">(auto-detected from URL)</span>
-              </label>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {/* Auto-detect option */}
-                <button
-                  type="button"
-                  onClick={() => { setSelectedBrand(''); setDetectedBrand(null); }}
-                  className={`p-3 rounded-xl border text-sm font-medium transition-all flex flex-col items-center justify-center gap-2 ${
-                    !selectedBrand
-                      ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
-                      : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
-                  }`}
-                >
-                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
-                    <span className="text-xs font-semibold">Auto</span>
-                  </div>
-                  <span className="text-xs">Auto-detect</span>
-                </button>
-
-                {/* Brand cards — logo always goes through image proxy */}
-                {brands.map((b) => {
-                  const isSelected = selectedBrand === b._id;
-                  const isDetected = detectedBrand === b._id;
-
-                  return (
-                    <button
-                      key={b._id}
-                      type="button"
-                      onClick={() => setSelectedBrand(b._id)}
-                      className={`p-3 rounded-xl border text-sm font-medium transition-all flex flex-col items-center justify-center gap-2 relative ${
-                        isSelected
-                          ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-md ring-1 ring-blue-200'
-                          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
-                      }`}
-                    >
-                      {/* Auto-detected badge */}
-                      {isDetected && (
-                        <span className="absolute -top-2 -right-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded-full shadow-sm z-10">
-                          {isSelected ? 'Matched ✓' : 'Detected'}
-                        </span>
-                      )}
-
-                      {/* Logo (via proxy) or coloured initials */}
-                      <BrandLogo brand={b} />
-
-                      <span className="truncate w-full text-center text-xs font-semibold">
-                        {b.name}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
             {/* ── URL input ─────────────────────────────────────────────── */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Product URL</label>
@@ -219,6 +160,34 @@ const LinkGenerator = () => {
                 className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-shadow placeholder:text-slate-400"
                 required
               />
+            </div>
+
+            {/* ── Brand selector ────────────────────────────────────────── */}
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-slate-700">
+                Detected Brand
+              </label>
+
+              {detectedBrand ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {brands.filter(b => b._id === detectedBrand).map((b) => (
+                    <div
+                      key={b._id}
+                      className="p-3 rounded-xl border border-green-500 bg-green-50 text-green-800 shadow-sm flex items-center gap-4"
+                    >
+                      <BrandLogo brand={b} />
+                      <div className="flex-1 min-w-0">
+                         <span className="block truncate text-sm font-bold">{b.name}</span>
+                         <span className="block text-xs text-green-600">✓ Auto-detected</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 text-sm flex items-center justify-center">
+                  {originalUrl ? "No supported brand detected for this URL." : "Paste a link above to auto-detect the brand."}
+                </div>
+              )}
             </div>
 
             {/* ── Submit ────────────────────────────────────────────────── */}

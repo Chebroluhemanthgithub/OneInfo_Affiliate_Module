@@ -11,22 +11,46 @@ const Network = require("../networks/network.model");
 const { getServiceByKey } = require("../services/affiliate/networkFactory");
 const { normalizeUrl } = require("../utils/urlNormalizer");
 
-// ─────────────────────────────────────────────
-// Domain whitelist — only these are allowed to be shortened.
-// Prevents abuse (phishing, random URL shortening, malware links).
-// ─────────────────────────────────────────────
-const ALLOWED_DOMAINS = [
-  "lifestylestores.com",
-  "plumgoodness.com",
-];
-
-function isAllowedDomain(url) {
+/**
+ * Validates the product URL by checking against the Brand collection in MongoDB.
+ * Normalizes domain for better matching (removes 'www.').
+ */
+async function validateProductUrl(url) {
+  // 1. Must be a valid URL
+  let parsed;
   try {
-    const { hostname } = new URL(url);
-    return ALLOWED_DOMAINS.some((d) => hostname.includes(d));
+    parsed = new URL(url);
   } catch {
-    return false;
+    return "Invalid URL. Please paste a full product link (starting with https://).";
   }
+
+  // 2. Must use https
+  if (parsed.protocol !== "https:") {
+    return "Only HTTPS links are supported.";
+  }
+
+  // 3. Normalize domain (remove www.)
+  let domain = parsed.hostname.toLowerCase();
+  if (domain.startsWith("www.")) {
+    domain = domain.substring(4);
+  }
+
+  // 4. Find Brand in DB by domain or in domains array
+  // We check if brand is status='active' AND networkStatus='active' (joined)
+  const brand = await Brand.findOne({
+    status: "active",
+    networkStatus: "active",
+    $or: [
+      { domain: domain },
+      { domains: domain }
+    ]
+  }).lean();
+
+  if (!brand) {
+    return `This brand is not currently active in our affiliate program.`;
+  }
+
+  return { brand }; // ✅ Success, return the brand for later use
 }
 
 // ─────────────────────────────────────────────
@@ -47,62 +71,48 @@ router.post("/create", async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    // ── 1. Normalize URL ───────────────────────
+    // ── 1. Validate the URL and Find Brand ─────────────────────────
+    let brand = null;
+    let validationResult = await validateProductUrl(originalUrl);
+    
+    if (typeof validationResult === "string") {
+      // If validation failed but a brandId was explicitly provided (admin/power-user flow), 
+      // we allow it if the brand exists.
+      if (req.body && req.body.brandId) {
+        brand = await Brand.findById(req.body.brandId).lean();
+        if (!brand) return res.status(400).json({ error: "Invalid brandId" });
+      } else {
+        return res.status(400).json({ error: validationResult });
+      }
+    } else {
+      brand = validationResult.brand;
+    }
+
+    // ── 2. Normalize URL ───────────────────────
+    // We already have a normalizedUrl in the request body for duplicate check, 
+    // but we'll ensure it's fresh.
     const normalizedUrl = normalizeUrl(originalUrl);
 
-    // ── 2. Determine Network & Brand ─────────────
+    // ── 3. Determine Network & Platform ─────────────
     let platform = "admitad";
-    let brandId = null;
-    let networkId = "admitad"; // Default network
-    let brand = null;
-
-    if (req.body && req.body.brandId) {
-      console.log('Link create: requested brandId=', req.body.brandId);
-      brand = await Brand.findById(req.body.brandId).lean();
-      } else {
-        // Automatic brand detection based on domain
-        try {
-          const { hostname } = new URL(normalizedUrl);
-          // Find if any brand's domain matches the hostname
-          const activeBrands = await Brand.find({ status: 'active', domain: { $ne: "" } }).lean();
-          brand = activeBrands.find(b => hostname.includes(b.domain));
-        } catch (e) {
-          console.warn("Brand auto-detection failed", e.message);
-        }
-      }
+    let brandId = brand ? brand._id : null;
+    let networkId = "admitad"; 
 
     if (brand) {
-      brandId = brand._id;
       networkId = brand.networkId;
       const network = await Network.findById(networkId).lean();
       if (network) {
         platform = network.key;
       }
-    } else if (req.body && req.body.brandId) {
-      return res.status(400).json({ error: "Invalid brandId" });
     }
 
-    // If no brand detected, use platform to find default networkId
-    if (!brand) {
+    // If no brand detected, use platform string to find default networkId
+    if (!networkId) {
       const network = await Network.findOne({ key: platform }).lean();
       if (network) networkId = network._id;
     }
 
-    // ── 3. Domain whitelist check ─────────────────
-    // If brandId is provided we trust the brand mapping and skip the domain whitelist.
-    if (!(req.body && req.body.brandId) && !isAllowedDomain(originalUrl)) {
-      if (originalUrl.includes("myntra.com")) {
-        return res.status(400).json({
-          error: "Myntra brands is not listed in my affiliation program",
-        });
-      }
-      return res.status(400).json({
-        error: `Unsupported domain. Only ${ALLOWED_DOMAINS.join(", ")} are allowed.`,
-      });
-    }
-
     // ── 4. Duplicate check ───────────────────────
-    // Production-grade de-duplication: creator + network + normalizedUrl
     const existingLink = await AffiliateLink.findOne({ 
       creatorId,
       networkId,

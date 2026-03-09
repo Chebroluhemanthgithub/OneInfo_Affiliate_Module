@@ -113,6 +113,7 @@ app.use(errorMiddleware);
 ============================================================ */
 require("./src/cron/admitad.cron");
 require("./src/cron/cuelinks.cron");
+require("./src/cron/brandSync.cron");
 
 /* ============================================================
    START SERVER — async IIFE to properly await DB + GraphQL

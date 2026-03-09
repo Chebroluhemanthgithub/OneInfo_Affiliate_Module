@@ -31,7 +31,10 @@ cron.schedule("*/30 * * * *", async () => {
         let brandId = null;
         const cid = action.cid || action.campaign_id || action.camp_id || action.campaign;
         if (cid) {
-          const brand = await Brand.findOne({ networkCampaignId: Number(cid) }).lean();
+          const brand = await Brand.findOne({ 
+            networkCampaignId: Number(cid), 
+            networkId: 'cuelinks' 
+          }).lean();
           if (brand) brandId = brand._id;
         }
 

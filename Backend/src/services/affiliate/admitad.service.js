@@ -3,8 +3,6 @@ require("dotenv").config();
 
 class AdmitadService {
   constructor() {
-    this.clientId = process.env.ADMITAD_CLIENT_ID;
-    this.base64Header = process.env.ADMITAD_BASE64_HEADER;
     this.accessToken = null;
     this.tokenExpiry = null;
   }
@@ -17,15 +15,22 @@ class AdmitadService {
       return this.accessToken;
     }
 
+    const clientId = process.env.ADMITAD_CLIENT_ID;
+    const base64Header = process.env.ADMITAD_BASE64_HEADER;
+
+    if (!clientId || !base64Header) {
+      throw new Error("ADMITAD_CLIENT_ID or ADMITAD_BASE64_HEADER not configured in .env");
+    }
+
     const response = await _fetch("https://api.admitad.com/token/", {
       method: "POST",
       headers: {
-        Authorization: `Basic ${this.base64Header}`,
+        Authorization: `Basic ${base64Header}`,
         "Content-Type": "application/x-www-form-urlencoded"
       },
       body: new URLSearchParams({
         grant_type: "client_credentials",
-        client_id: this.clientId,
+        client_id: clientId,
         scope: "deeplink_generator public_data websites advcampaigns"
       })
     });
@@ -175,18 +180,58 @@ class AdmitadService {
   }
    
   // ===============================
-  // GET JOINED CAMPAIGNS (Discovery)
+  // GET ALL CAMPAIGNS (Discovery)
   // ===============================
-  async getCampaigns() {
+  async getCampaigns(activeOnly = true) {
     const token = await this.getAccessToken();
-    const url = new URL("https://api.admitad.com/advcampaigns/");
-    url.searchParams.append("connection_status", "active");
+    const websiteId = await this.getWebsiteId(token);
+    
+    let allResults = [];
+    let offset = 0;
+    const limit = 200; // API max is usually 200-500
+    
+    console.log(`Fetching Admitad campaigns (activeOnly: ${activeOnly})...`);
 
-    const response = await _fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const data = await response.json();
-    return data.results || [];
+    while (true) {
+      const url = new URL("https://api.admitad.com/advcampaigns/");
+      
+      // If we want ALL campaigns, we still pass the website ID. 
+      // This allows the API to return the connection status for each campaign relative to our site.
+      url.searchParams.append("website", websiteId);
+      
+      if (activeOnly) {
+        url.searchParams.append("connection_status", "active");
+      }
+      
+      url.searchParams.append("limit", limit.toString());
+      url.searchParams.append("offset", offset.toString());
+
+      const response = await _fetch(url.toString(), {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (!response.ok) {
+        const text = await response.text();
+        console.error("Admitad API Error:", response.status, text);
+        break;
+      }
+
+      const data = await response.json();
+      
+      if (!data.results || data.results.length === 0) {
+        break;
+      }
+      
+      allResults = allResults.concat(data.results);
+      console.log(`  Fetched ${allResults.length} / ${data._meta.count || 'unknown'}...`);
+      
+      if (allResults.length >= (data._meta.count || 0)) break;
+      if (data.results.length < limit) break;
+      
+      offset += limit;
+    }
+    
+    return allResults;
   }
 }
 
