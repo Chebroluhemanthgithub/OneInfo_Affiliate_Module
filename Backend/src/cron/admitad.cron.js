@@ -2,6 +2,7 @@ const cron = require("node-cron");
 const admitadService = require("../services/affiliate/admitad.service");
 const orderQueue = require("../queue/order.queue");
 const SyncState = require("../models/syncState.model");
+const Brand = require("../brands/brand.model");
 
 cron.schedule("*/10 * * * *", async () => {
   console.log("Running Admitad sync...");
