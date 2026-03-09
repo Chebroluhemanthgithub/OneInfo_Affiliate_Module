@@ -12,10 +12,8 @@ class CuelinksService {
     }
 
     const cid = brand.networkCampaignId;
-
-    const base = new URL("https://linksredirect.com/");
+    const base = new URL("https://linksredirect.com/url/");
     base.searchParams.set("cid", cid.toString());
-    base.searchParams.set("source", "linkkit");
     base.searchParams.set("url", originalUrl);
     
     return base.toString();

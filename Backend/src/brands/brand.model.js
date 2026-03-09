@@ -6,6 +6,7 @@ const BrandSchema = new mongoose.Schema(
     name: { type: String, required: true },
     networkId: { type: String, required: true, index: true },
     networkCampaignId: { type: Number, index: true },
+    networkCampaignLink: { type: String, default: "" }, // Campaign-specific base tracking link
     category: { type: String, default: "" },
     domain: { type: String, default: "", index: true }, // Legacy/Primary domain
     domains: { type: [String], default: [], index: true }, // Supported domains list

@@ -1,15 +1,17 @@
-module.exports = {
+const affiliateConfig = {
   admitad: {
     paramMap: {
-      subid: "subid",
-      subid1: "subid1",
+      subid: "subid1",  // shortCode
+      subid1: "subid2", // creatorId
       ulp: "ulp",
     },
   },
   cuelinks: {
     paramMap: {
       subid: "subid1",  // shortCode
-      subid1: "subid", // creatorId
+      subid1: "subid2", // creatorId
     },
   },
 };
+
+module.exports = affiliateConfig;
