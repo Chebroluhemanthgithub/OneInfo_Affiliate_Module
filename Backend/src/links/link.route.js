@@ -11,49 +11,11 @@ const Network = require("../networks/network.model");
 const { getServiceByKey } = require("../services/affiliate/networkFactory");
 const { normalizeUrl } = require("../utils/urlNormalizer");
 
-// ─────────────────────────────────────────────
-// Brand Rules — domain whitelist + per-brand product URL patterns.
-// Each entry has:
-//   domain    : the hostname fragment used to match the URL
-//   isProduct : a function that returns true only for deep product pages
-//   hint      : human-readable hint shown to the user on failure
-// ─────────────────────────────────────────────
-const BRAND_RULES = [
-  {
-    domain: "lifestylestores.com",
-    isProduct(url) {
-      try {
-        const { pathname } = new URL(url);
-        // Valid Lifestyle product pages contain both /SHOP- and /p/ segments
-        // e.g. /in/en/SHOP-Giggles.../p/1100004715-Toffee-Brown
-        return pathname.includes("/SHOP-") && pathname.includes("/p/");
-      } catch {
-        return false;
-      }
-    },
-    hint: "Please paste a specific Lifestyle product link. It should look like: https://www.lifestylestores.com/in/en/SHOP-ProductName.../p/PRODUCT_ID",
-  },
-  {
-    domain: "plumgoodness.com",
-    isProduct(url) {
-      try {
-        const { pathname } = new URL(url);
-        // Valid Plum product pages always start with /products/
-        // e.g. /products/green-tea-pore-cleansing-face-wash
-        return pathname.startsWith("/products/") && pathname.length > "/products/".length;
-      } catch {
-        return false;
-      }
-    },
-    hint: "Please paste a specific Plum product link. It should look like: https://plumgoodness.com/products/product-name",
-  },
-];
-
 /**
- * Returns null if the URL is valid for shortening.
- * Returns an error string if the URL is rejected.
+ * Validates the product URL by checking against the Brand collection in MongoDB.
+ * Normalizes domain for better matching (removes 'www.').
  */
-function validateProductUrl(url) {
+async function validateProductUrl(url) {
   // 1. Must be a valid URL
   let parsed;
   try {
@@ -62,28 +24,33 @@ function validateProductUrl(url) {
     return "Invalid URL. Please paste a full product link (starting with https://).";
   }
 
-  // 2. Must use https (not http, ftp, etc.)
+  // 2. Must use https
   if (parsed.protocol !== "https:") {
-    return "Only HTTPS links are supported. Please copy the link from your browser address bar.";
+    return "Only HTTPS links are supported.";
   }
 
-  // 3. Match against brand rules
-  const rule = BRAND_RULES.find((r) => parsed.hostname.includes(r.domain));
-
-  if (!rule) {
-    if (url.includes("myntra.com")) {
-      return "Myntra is not listed in our affiliation program.";
-    }
-    const allowed = BRAND_RULES.map((r) => r.domain).join(", ");
-    return `Unsupported brand. Currently supported brands: ${allowed}.`;
+  // 3. Normalize domain (remove www.)
+  let domain = parsed.hostname.toLowerCase();
+  if (domain.startsWith("www.")) {
+    domain = domain.substring(4);
   }
 
-  // 4. Must be a product page, not a homepage or category
-  if (!rule.isProduct(url)) {
-    return rule.hint;
+  // 4. Find Brand in DB by domain or in domains array
+  // We check if brand is status='active' AND networkStatus='active' (joined)
+  const brand = await Brand.findOne({
+    status: "active",
+    networkStatus: "active",
+    $or: [
+      { domain: domain },
+      { domains: domain }
+    ]
+  }).lean();
+
+  if (!brand) {
+    return `This brand is not currently active in our affiliate program.`;
   }
 
-  return null; // ✅ All checks passed
+  return { brand }; // ✅ Success, return the brand for later use
 }
 
 // ─────────────────────────────────────────────
@@ -104,57 +71,48 @@ router.post("/create", async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    // ── 1. Validate the URL is a genuine product page ─────────────────────────
-    // Skip this check when a specific brandId is explicitly sent (admin/power-user flow)
-    if (!(req.body && req.body.brandId)) {
-      const validationError = validateProductUrl(originalUrl);
-      if (validationError) {
-        return res.status(400).json({ error: validationError });
+    // ── 1. Validate the URL and Find Brand ─────────────────────────
+    let brand = null;
+    let validationResult = await validateProductUrl(originalUrl);
+    
+    if (typeof validationResult === "string") {
+      // If validation failed but a brandId was explicitly provided (admin/power-user flow), 
+      // we allow it if the brand exists.
+      if (req.body && req.body.brandId) {
+        brand = await Brand.findById(req.body.brandId).lean();
+        if (!brand) return res.status(400).json({ error: "Invalid brandId" });
+      } else {
+        return res.status(400).json({ error: validationResult });
       }
+    } else {
+      brand = validationResult.brand;
     }
 
     // ── 2. Normalize URL ───────────────────────
+    // We already have a normalizedUrl in the request body for duplicate check, 
+    // but we'll ensure it's fresh.
     const normalizedUrl = normalizeUrl(originalUrl);
 
-    // ── 3. Determine Network & Brand ─────────────
+    // ── 3. Determine Network & Platform ─────────────
     let platform = "admitad";
-    let brandId = null;
-    let networkId = "admitad"; // Default network
-    let brand = null;
-
-    if (req.body && req.body.brandId) {
-      console.log('Link create: requested brandId=', req.body.brandId);
-      brand = await Brand.findById(req.body.brandId).lean();
-    } else {
-      // Automatic brand detection based on domain
-      try {
-        const { hostname } = new URL(normalizedUrl);
-        const activeBrands = await Brand.find({ status: 'active', domain: { $ne: "" } }).lean();
-        brand = activeBrands.find(b => hostname.includes(b.domain));
-      } catch (e) {
-        console.warn("Brand auto-detection failed", e.message);
-      }
-    }
+    let brandId = brand ? brand._id : null;
+    let networkId = "admitad"; 
 
     if (brand) {
-      brandId = brand._id;
       networkId = brand.networkId;
       const network = await Network.findById(networkId).lean();
       if (network) {
         platform = network.key;
       }
-    } else if (req.body && req.body.brandId) {
-      return res.status(400).json({ error: "Invalid brandId" });
     }
 
-    // If no brand detected, use platform to find default networkId
-    if (!brand) {
+    // If no brand detected, use platform string to find default networkId
+    if (!networkId) {
       const network = await Network.findOne({ key: platform }).lean();
       if (network) networkId = network._id;
     }
 
     // ── 4. Duplicate check ───────────────────────
-    // Production-grade de-duplication: creator + network + normalizedUrl
     const existingLink = await AffiliateLink.findOne({ 
       creatorId,
       networkId,

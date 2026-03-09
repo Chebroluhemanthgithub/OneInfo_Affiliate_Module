@@ -1,0 +1,67 @@
+{
+  "id": 12497,
+  "name": "1-2-3",
+  "url": "https://www.1-2-3.tv",
+  "domain": "1-2-3.tv",
+  "payout_type": "Per Click",
+  "payout": 0.143208,
+  "image": "https://cdn0.cuelinks.com/uploads/images/Placeholder-Campaign.png",
+  "additional_info": null,
+  "additional_info_html": null,
+  "important_info_html": "For CPC campaign, it is recommended to pass your click id in &scid= parameter in the tracking link<br><br>This is a CPC campaign.<br><br>Commission rates are dynamic.<br><br>Disallowed mediums:<br>PPC, SEM, Adult, Gambling, Google ads.<br><br><b>Note:</b> To maintain your place in the program, your clicks should ideally result in sales. Non-converting clicks may cause the advertiser to remove you from the program.",
+  "last_modified": "2025-09-24T02:32:09.774+05:30",
+  "payout_categories": [
+    {
+      "name": "CPC (Dynamic)",
+      "payout_type": "Per Click",
+      "payout": 0.14,
+      "is_header": false
+    }
+  ],
+  "categories": [
+    {
+      "id": 12,
+      "name": "Others"
+    }
+  ],
+  "countries": [
+    {
+      "id": 57,
+      "iso": "DE",
+      "name": "Germany"
+    }
+  ],
+  "reporting_type": "Offline",
+  "deeplink_allowed": true,
+  "sub_ids_allowed": false,
+  "cashback_publishers_allowed": false,
+  "social_media_publishers_allowed": false,
+  "missing_transactions_accepted": false,
+  "cookie_duration": "30 minutes",
+  "allowed_platforms": {
+    "web": true,
+    "mobile_web": false,
+    "android": false,
+    "ios": false
+  },
+  "allowed_mediums": {
+    "text_link": true,
+    "banner": true,
+    "deals": false,
+    "coupons": false,
+    "cashback": false,
+    "email": false,
+    "custom_email": false,
+    "pop_traffic": false,
+    "native_ads": false,
+    "facebook_ads": false,
+    "sem_brand_keywords": false,
+    "sem_generic_keywords": false
+  },
+  "conversion_flow": {
+    "Step 1": "User clicks on the link",
+    "Step 2": "User visit the merchant website",
+    "Step 3": "User buys a product"
+  },
+  "affiliate_url": "https://linksredirect.com/?cid=267881&source=api&url=https%3A%2F%2Fwww.1-2-3.tv"
+}

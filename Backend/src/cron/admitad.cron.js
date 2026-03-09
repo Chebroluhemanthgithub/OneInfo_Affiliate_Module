@@ -26,14 +26,16 @@ cron.schedule("*/10 * * * *", async () => {
 
     if (actions.length > 0) {
       for (const action of actions) {
-        // 💰 FINANCIAL VERIFICATION LOG (TEMPORARY)
-        console.log("Admitad Action Data:", {
-          order_id: action.order_id,
-          status: action.status,
-          price: action.price || action.amount, // Order Value
-          payment: action.payment, // Expected Commission
-          currency: action.currency
-        });
+        // Attempt to resolve brandId
+        let brandId = null;
+        const cid = action.campaign_id || action.advcampaign_id || action.cid;
+        if (cid) {
+          const brand = await Brand.findOne({ 
+            networkCampaignId: Number(cid), 
+            networkId: 'admitad' 
+          }).lean();
+          if (brand) brandId = brand._id;
+        }
 
         await orderQueue.add("createOrder", {
           subId: action.subid,
@@ -42,7 +44,8 @@ cron.schedule("*/10 * * * *", async () => {
           rawAmount: action.price || action.amount, // product price (cart value)
           status: action.status, 
           platform: "admitad",
-          category: "fashion" 
+          category: action.category || "fashion",
+          brandId: brandId
         }, {
           attempts: 3,
           backoff: 5000,
