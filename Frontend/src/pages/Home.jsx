@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import { CATEGORIES } from '../data/brands';
+import { CATEGORIES, BRANDS } from '../data/brands';
 import { LayoutGrid, ArrowRight } from 'lucide-react';
 
 const Home = () => {
@@ -49,6 +49,34 @@ const Home = () => {
                     <ArrowRight size={16} className="ml-1 opacity-0 group-hover:opacity-100 transition-all" />
                   </div>
                 </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-slate-800">Featured Brands</h2>
+            <button 
+              onClick={() => navigate('/brands/lifestyle')}
+              className="text-blue-600 text-sm font-semibold hover:underline flex items-center gap-1"
+            >
+              View all <ArrowRight size={14} />
+            </button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 lg:grid-cols-10 gap-3">
+            {BRANDS.lifestyle.map((brand) => (
+              <div 
+                key={brand.name}
+                onClick={() => navigate('/brands/lifestyle')}
+                className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 group"
+              >
+                <div className="w-12 h-12 rounded-lg bg-slate-50 flex items-center justify-center overflow-hidden">
+                  <img src={brand.logo} alt={brand.name} className="w-8 h-8 object-contain" />
+                </div>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center group-hover:text-blue-600 transition-colors">
+                  {brand.name}
+                </span>
               </div>
             ))}
           </div>

@@ -94,9 +94,9 @@ router.post("/create", async (req, res) => {
     const normalizedUrl = normalizeUrl(originalUrl);
 
     // ── 3. Determine Network & Platform ─────────────
-    let platform = "admitad";
+    let platform = "cuelinks";
     let brandId = brand ? brand._id : null;
-    let networkId = "admitad"; 
+    let networkId = "cuelinks"; 
 
     if (brand) {
       networkId = brand.networkId;

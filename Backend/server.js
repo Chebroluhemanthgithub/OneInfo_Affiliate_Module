@@ -108,12 +108,12 @@ app.use("/graphql", apiLimiter, authMiddleware);
 ============================================================ */
 app.use(errorMiddleware);
 
-/* ============================================================
-   START CRON JOBS
-============================================================ */
-require("./src/cron/admitad.cron");
+// /* ============================================================
+//    START CRON JOBS
+// ============================================================ */
+// require("./src/cron/admitad.cron");
 require("./src/cron/cuelinks.cron");
-require("./src/cron/brandSync.cron");
+// require("./src/cron/brandSync.cron");
 
 /* ============================================================
    START SERVER — async IIFE to properly await DB + GraphQL

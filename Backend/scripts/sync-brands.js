@@ -30,35 +30,35 @@ async function sync() {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('Connected.');
 
-    // 1. Sync Admitad Campaigns
-    console.log('Fetching Admitad campaigns...');
-    const admitadCampaigns = await admitadService.getCampaigns(false);
-    console.log(`Found ${admitadCampaigns.length} Admitad campaigns.`);
+    // 1. Sync Admitad Campaigns (COMMENTED OUT)
+    // console.log('Fetching Admitad campaigns...');
+    // const admitadCampaigns = await admitadService.getCampaigns(false);
+    // console.log(`Found ${admitadCampaigns.length} Admitad campaigns.`);
 
-    for (const item of admitadCampaigns) {
-      const mainDomain = normalizeDomain(item.site_url || item.url);
-      if (!mainDomain) continue;
+    // for (const item of admitadCampaigns) {
+    //   const mainDomain = normalizeDomain(item.site_url || item.url);
+    //   if (!mainDomain) continue;
 
-      const brandUID = `admitad_${item.id}`;
-      const update = {
-        _id: brandUID,
-        name: item.name,
-        networkId: 'admitad',
-        networkCampaignId: item.id,
-        networkCampaignLink: item.gotolink || '',
-        category: item.categories && item.categories[0] ? item.categories[0].name : 'general',
-        domain: mainDomain,
-        logoUrl: item.image || '',
-        networkStatus: item.connection_status === 'active' || item.connected ? 'active' : 'inactive',
-      };
+    //   const brandUID = `admitad_${item.id}`;
+    //   const update = {
+    //     _id: brandUID,
+    //     name: item.name,
+    //     networkId: 'admitad',
+    //     networkCampaignId: item.id,
+    //     networkCampaignLink: item.gotolink || '',
+    //     category: item.categories && item.categories[0] ? item.categories[0].name : 'general',
+    //     domain: mainDomain,
+    //     logoUrl: item.image || '',
+    //     networkStatus: item.connection_status === 'active' || item.connected ? 'active' : 'inactive',
+    //   };
 
-      await Brand.updateOne(
-        { _id: brandUID },
-        { $set: update, $addToSet: { domains: mainDomain } },
-        { upsert: true }
-      );
-    }
-    console.log('Admitad sync completed.');
+    //   await Brand.updateOne(
+    //     { _id: brandUID },
+    //     { $set: update, $addToSet: { domains: mainDomain } },
+    //     { upsert: true }
+    //   );
+    // }
+    // console.log('Admitad sync completed.');
 
     // 2. Sync Cuelinks Campaigns
     console.log('Fetching Cuelinks campaigns...');
@@ -86,6 +86,9 @@ async function sync() {
       // If affiliate_url is present, we consider it 'active'.
       const isActive = !!item.affiliate_url;
 
+      // Extract ISO country codes
+      const countryCodes = (item.countries || []).map(c => c.iso).filter(Boolean);
+
       const update = {
         _id: brandUID,
         name: item.name,
@@ -94,6 +97,7 @@ async function sync() {
         category: item.categories && item.categories[0] ? item.categories[0].name : 'general',
         domain: mainDomain,
         logoUrl: item.image || '',
+        countries: countryCodes,
         networkStatus: isActive ? 'active' : 'inactive',
       };
 

@@ -6,59 +6,19 @@ const path = require('path');
 
 async function discover() {
   try {
-    console.log('Fetching ALL campaigns from Admitad API (this may take a few seconds)...');
-    const admitadCampaigns = await admitadService.getCampaigns(false); // false = don't filter by active only
-    console.log(`Found ${admitadCampaigns.length} total campaigns in Admitad catalog for your website.`);
+    // console.log('Fetching ALL campaigns from Admitad API (this may take a few seconds)...');
+    // const admitadCampaigns = await admitadService.getCampaigns(false); // false = don't filter by active only
+    // console.log(`Found ${admitadCampaigns.length} total campaigns in Admitad catalog for your website.`);
+    const admitadCampaigns = [];
 
     console.log('Fetching ALL campaigns from Cuelinks API (this may take a few seconds)...');
     const cuelinksCampaigns = await cuelinksService.getCampaigns();
     console.log(`Found ${cuelinksCampaigns.length} total campaigns in Cuelinks catalog.`);
 
-    const admitadMapped = admitadCampaigns.map(item => {
-      // Logic for commission rate formatting
-      let commissionRate = "N/A";
-      if (item.actions && item.actions.length > 0) {
-        const rates = item.actions
-          .filter(a => a.payment_size !== null && a.payment_size !== undefined)
-          .map(a => {
-            const type = a.payment_type === 'percentage' ? '%' : (a.currency || 'RUB');
-            return {
-              size: parseFloat(a.payment_size),
-              type: type
-            };
-          });
-
-        const validRates = rates.filter(r => !isNaN(r.size));
-        const types = [...new Set(validRates.map(r => r.type))];
-        
-        const formattedRates = types.map(t => {
-          const tRates = validRates.filter(r => r.type === t).map(r => r.size);
-          const min = Math.min(...tRates);
-          const max = Math.max(...tRates);
-          
-          if (min === max) {
-            return `${min.toFixed(2)}${t}`;
-          } else {
-            return `${min.toFixed(2)}-${max.toFixed(2)}${t}`;
-          }
-        });
-
-        if (formattedRates.length > 0) {
-          commissionRate = formattedRates.join(', ');
-        }
-      }
-
-      return {
-        network: "admitad",
-        id: item.id,
-        storeName: item.name || "",
-        logo: item.image || "",
-        storeUrl: item.site_url || "",
-        category: item.categories && item.categories[0] ? item.categories[0].name : "N/A",
-        commissionRate: commissionRate,
-        isConnectedToWebsite: item.connection_status === "active" ? "Yes" : "No"
-      };
-    });
+    // const admitadMapped = admitadCampaigns.map(item => {
+    //   ... (mapped logic)
+    // });
+    const admitadMapped = [];
 
     const cuelinksMapped = cuelinksCampaigns.map(item => {
       // commission rate formatting for Cuelinks
@@ -98,8 +58,8 @@ async function discover() {
     console.log(`Full data saved to: ${outputPath}`);
     
     // Print first 5 as a preview
-    console.log('\nPreview (First 5 Admitad):');
-    console.log(JSON.stringify(admitadMapped.slice(0, 5), null, 2));
+    // console.log('\nPreview (First 5 Admitad):');
+    // console.log(JSON.stringify(admitadMapped.slice(0, 5), null, 2));
 
     console.log('\nPreview (First 5 Cuelinks):');
     console.log(JSON.stringify(cuelinksMapped.slice(0, 5), null, 2));

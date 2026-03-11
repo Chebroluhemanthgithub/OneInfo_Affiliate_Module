@@ -101,8 +101,22 @@ const LinkGenerator = () => {
       return;
     }
     try {
-      const { hostname } = new URL(originalUrl);
-      const match = brands.find(b => b.domain && hostname.includes(b.domain));
+      let { hostname } = new URL(originalUrl);
+      hostname = hostname.toLowerCase();
+      
+      // Normalize: remove www.
+      const cleanHost = hostname.startsWith('www.') ? hostname.substring(4) : hostname;
+
+      const match = brands.find(b => {
+        // 1. Check primary domain (exact or subdomain match)
+        if (b.domain && (cleanHost === b.domain || cleanHost.endsWith('.' + b.domain))) return true;
+        
+        // 2. Check domains array (exact or subdomain match)
+        if (b.domains && b.domains.some(d => cleanHost === d || cleanHost.endsWith('.' + d))) return true;
+
+        return false;
+      });
+
       if (match) {
         setDetectedBrand(match._id);
         setSelectedBrand(match._id);   // auto-select too
