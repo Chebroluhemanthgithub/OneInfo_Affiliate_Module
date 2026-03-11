@@ -100,10 +100,10 @@ export const BRANDS = {
       description: 'Premium mens grooming products.'
     },
     {
-      name: 'Goibibo',
-      logo: 'https://www.google.com/s2/favicons?domain=goibibo.com&sz=128',
-      url: 'https://www.goibibo.com',
-      description: 'Book flights, hotels, and buses easily.'
+      name: 'BeBodywise',
+      logo: 'https://www.google.com/s2/favicons?domain=bebodywise.com&sz=128',
+      url: 'https://www.bebodywise.com',
+      description: 'Personalized wellness for women.'
     },
     {
       name: 'Forest Essentials',
@@ -124,10 +124,22 @@ export const BRANDS = {
       description: 'Furniture and home decor destination.'
     },
     {
-      name: 'Samsung',
-      logo: 'https://www.google.com/s2/favicons?domain=samsung.com&sz=128',
-      url: 'https://www.samsung.com/in',
-      description: 'World-renowned electronics and appliances.'
+      name: 'Dot & Key',
+      logo: 'https://www.google.com/s2/favicons?domain=dotandkey.com&sz=128',
+      url: 'https://www.dotandkey.com',
+      description: 'Nature-inspired skincare for modern needs.'
+    },
+    {
+      name: 'Plum Goodness',
+      logo: 'https://www.google.com/s2/favicons?domain=plumgoodness.com&sz=128',
+      url: 'https://www.plumgoodness.com',
+      description: '100% vegan beauty and personal care.'
+    },
+    {
+      name: 'Pepe Jeans',
+      logo: 'https://www.google.com/s2/favicons?domain=pepejeans.in&sz=128',
+      url: 'https://www.pepejeans.in',
+      description: 'Iconic denim and fashion brand.'
     }
   ],
 };
